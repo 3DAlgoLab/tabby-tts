@@ -288,9 +288,11 @@ const PIPER_ENGINE_BYTES = 62_000_000
                 <div class="header">
                     <div class="title">Letters and digits only</div>
                     <div class="description">
-                        Speak only words and numbers: punctuation, box drawing, progress bars
-                        and other symbols are replaced by a pause. Apostrophes inside words are
-                        kept, so contractions still read correctly.
+                        Speak only words and numbers: box drawing, progress bars, brackets and
+                        other symbols are replaced by a pause. Tone punctuation (. , ! ? ; :) is
+                        kept, so a question is still read as a question and 1,024 stays one
+                        number. Apostrophes inside words are kept, so contractions still read
+                        correctly.
                     </div>
                 </div>
                 <toggle [ngModel]="settings.alphaNumOnly"

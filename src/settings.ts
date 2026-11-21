@@ -63,10 +63,12 @@ export interface TtsSettings {
     lineBreaks: LineBreaks
 
     /**
-     * Speak only letters and digits (any script). Punctuation, box drawing,
-     * progress bars and other symbols become a pause instead of being deleted, so
-     * words never glue together. Sentence rhythm survives: the per-line pause that
-     * `sanitize` appends is added after the strip.
+     * Speak only letters and digits (any script) plus the punctuation that carries
+     * tone: `. , ! ? ; :` survive, so "Is this an error?" keeps its question pitch
+     * and `1.2` / `1,024` stay one number. Box drawing, progress bars, brackets and
+     * other symbols become a pause instead of being deleted, so words never glue
+     * together. Sentence rhythm survives too: the per-line pause that `sanitize`
+     * appends is added after the strip.
      */
     alphaNumOnly: boolean
 

@@ -16,19 +16,39 @@ const ANSI = /\x1b(?:\[[0-9;?]*[ -/]*[@-~]|\][^\x07\x1b]*(?:\x07|\x1b\\)|[@-Z\\-
 const NOISE_LINE = /^[\s\-_=~*#.%•·─━│┃┌┐└┘├┤┬┴┼░▒▓\p{P}]*$/u
 
 /**
- * Everything Piper would have to spell instead of say: punctuation, box drawing,
- * progress bars, ASCII art. Apostrophes are handled separately so that English
- * contractions survive ("don't" would otherwise come out as "don t").
+ * Characters a voice needs for prosody, kept even in letters/digits-only mode:
+ * `?` lifts the pitch of a question, `.` `!` `;` `:` `,` open or close a phrase.
+ * Dropping them makes "Is this an error?" read as a flat statement.
  */
-const NON_ALNUM = /[^\p{L}\p{N}\s'’]/gu
-const STRAY_APOSTROPHE = /(?<!\p{L})['’]|['’](?!\p{L})/gu
+const SENTENCE_PUNCT = '.,!?:;'
 
 /**
- * Keep only letters and digits (of any script). Each dropped run becomes a space,
- * never nothing, so "foo,bar" reads as two words rather than one.
+ * Decorative junk: box drawing, progress bars, ASCII art, brackets, quotes,
+ * slashes. Apostrophes are handled separately so that English contractions
+ * survive ("don't" would otherwise come out as "don t"), and sentence punctuation
+ * is kept for its intonation value - see SENTENCE_PUNCT.
+ */
+const NON_SENTENCE = new RegExp(`[^\\p{L}\\p{N}\\s'\u2019${SENTENCE_PUNCT}]`, 'gu')
+const STRAY_APOSTROPHE = /(?<!\p{L})['\u2019]|['\u2019](?!\p{L})/gu
+/** Two or more punctuation marks, possibly spaced ("...", "?!", ", ,"): one is enough. */
+const PUNCT_RUN = new RegExp(`[${SENTENCE_PUNCT}](?:[${SENTENCE_PUNCT}\\s]*[${SENTENCE_PUNCT}])+`, 'gu')
+/** The mark worth keeping out of such a run: a question beats a full stop. */
+const PUNCT_PRIORITY: Record<string, number> = { '?': 6, '!': 5, '.': 4, ';': 3, ':': 2, ',': 1 }
+
+/**
+ * Keep letters and digits (of any script) plus sentence punctuation. Each dropped
+ * run becomes a space, never nothing, so "foo/bar" reads as two words rather than
+ * one glued token. Punctuation *between* digits is left alone: "1.2s" and "1,024"
+ * survive, which is how espeak says "one point two" and "one thousand twenty-four".
  */
 export function stripToAlnum (text: string): string {
-    return text.replace(NON_ALNUM, ' ').replace(STRAY_APOSTROPHE, ' ')
+    return text
+        .replace(/\u2026/g, '.')  // one ellipsis character -> dots, collapsed just below
+        .replace(NON_SENTENCE, ' ')
+        .replace(STRAY_APOSTROPHE, ' ')
+        .replace(PUNCT_RUN, run => [...run].reduce((a, c) => (PUNCT_PRIORITY[c] ?? 0) > (PUNCT_PRIORITY[a] ?? 0) ? c : a, ''))
+        .replace(/\s+([.,!?:;])/gu, '$1')  // "done ," -> "done,"
+        .replace(/ {2,}/g, ' ')
 }
 
 /** Spoken substitutions for symbols espeak reads awkwardly mid-sentence. */

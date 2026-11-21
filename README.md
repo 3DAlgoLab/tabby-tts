@@ -93,7 +93,7 @@ tts:
   sentenceSilence: 0.15
   sanitize: true                    # strip control chars / emoji / noise
   lineBreaks: flow                  # flow | pause | none - what a newline in the selection does
-  alphaNumOnly: false               # speak letters/digits only; symbols become a pause
+  alphaNumOnly: false                # drop every symbol except tone punctuation (. , ! ? ; :)
   truncateLong: true
   unloadAfterMinutes: 5             # idle worker unload, 0 = keep running
   assetsDir: ''                     # default %LOCALAPPDATA%\tabby-tts
@@ -106,10 +106,13 @@ Two toggles shape what reaches the voice:
 
 - **Clean terminal noise** (`sanitize`) - strips ANSI escapes, drops rules, banners and
   progress bars, says `$5` as "5 dollars" and `->` as "to", and turns line breaks into pauses.
-- **Letters and digits only** (`alphaNumOnly`) - anything that is not a letter or a digit (of
-  any script) becomes a pause instead of being deleted, so `C:\Windows;C:\Program` is read as
-  words rather than "colon backslash semicolon". Apostrophes inside words are kept, so
-  contractions still sound right, and the sentence pauses added by `sanitize` survive.
+- **Letters and digits only** (`alphaNumOnly`) - anything that is neither a letter nor a digit
+  (of any script) becomes a pause instead of being deleted, so `C:\Windows;C:\Program` is read
+  as words rather than "colon backslash semicolon". The punctuation that carries tone is kept -
+  `. , ! ? ; :` - so `Is this an error?` still rises at the end, and `1,024` and `1.2s` stay one
+  number instead of being split; a run such as `...` or `?!` collapses to a single mark.
+  Apostrophes inside words are kept, so contractions still sound right, and the sentence pauses
+  added by `sanitize` survive.
 - **Auto-speak on remote copy** (`autoSpeakOnCopy`) - speaks text that an application *inside*
   the terminal copies (OSC 52). Needed whenever that application owns the mouse; see
   *Inside tmux, vim, or anything else that grabs the mouse*.

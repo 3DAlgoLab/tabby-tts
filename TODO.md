@@ -105,6 +105,8 @@ authoritative API for this machine (npm `tabby-core` latest tag = `1.0.231-night
       (`tts:speak-clipboard`, `Ctrl-Alt-C`) for the case where even the copy is not reported
 - [x] `lineBreaks` (`flow` default / `pause` / `none`): rejoin lines the terminal wrapped, so
       sentence silence lands on real breaks instead of every screen line
+- [x] letters/digits-only keeps the punctuation that carries tone (`. , ! ? ; :`) and collapses
+      runs like `...` / `?!`, so a filtered question is still read as a question
 - [ ] Non-Windows engines beyond macOS `say`: Linux (`spd-say`/`espeak-ng`)
 - [ ] Optional: read the last output block / whole screen (`xterm.buffer`) on hotkey
 - [ ] Optional: language auto-detect per selection (voice switching for ko/en mixes)
