@@ -190,3 +190,13 @@ text handed to the voice - the quickest way to see what a filter option actually
 - **Worker died** - it is restarted on the next utterance; the log records the exit.
 - **Engine changes** take effect immediately; the worker is respawned (voice, rate,
   sentence silence, assets dir) or applied live (volume).
+
+## License
+
+MIT - see [LICENSE](LICENSE). Tabby itself and the pinned Piper build are MIT as well, so
+nothing here inherits a stricter term.
+
+Assets the plugin downloads keep their own licenses: the English voice models in
+`rhasspy/piper-voices` are licensed per model, so check the model card of a voice before
+redistributing the model or audio generated for it.
+
