@@ -1,0 +1,8 @@
+# Everything here is authored with LF. Without this, a clone with
+# core.autocrlf=true rewrites every file to CRLF on checkout, which shows up as
+# whole-file diffs the moment anyone edits a line.
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.woff2 binary

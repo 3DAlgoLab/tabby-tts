@@ -1,0 +1,52 @@
+{
+  "name": "tabby-tts",
+  "version": "0.1.0",
+  "description": "Read terminal selections aloud in Tabby - local offline TTS (Windows SAPI / macOS say) with clipboard copy",
+  "keywords": [
+    "tabby-plugin",
+    "tts",
+    "text-to-speech",
+    "accessibility",
+    "terminal"
+  ],
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "webpack --progress --color --mode production",
+    "watch": "webpack --progress --color --mode development --watch",
+    "dev": "node scripts/dev.mjs",
+    "install-local": "node scripts/install-local.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "author": "3DAlgoLab",
+  "license": "MIT",
+  "devDependencies": {
+    "@angular/animations": "15.2.10",
+    "@angular/common": "15.2.10",
+    "@angular/compiler": "15.2.10",
+    "@angular/core": "15.2.10",
+    "@angular/forms": "15.2.10",
+    "@angular/platform-browser": "15.2.10",
+    "@ng-bootstrap/ng-bootstrap": "^14.2.0",
+    "@types/node": "^20.14.0",
+    "@xterm/xterm": "^5.5.0",
+    "rxjs": "^7.8.1",
+    "tabby-core": "1.0.231-nightly.0",
+    "tabby-settings": "1.0.231-nightly.0",
+    "tabby-terminal": "1.0.231-nightly.0",
+    "ts-loader": "^9.5.1",
+    "typescript": "4.9.5",
+    "webpack": "^5.94.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "peerDependencies": {
+    "@angular/core": "*",
+    "rxjs": "*",
+    "tabby-core": "*",
+    "tabby-settings": "*",
+    "tabby-terminal": "*"
+  }
+}

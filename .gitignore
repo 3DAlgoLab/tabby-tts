@@ -1,0 +1,9 @@
+node_modules/
+dist/
+assets-cache/
+.cache/
+references/
+.test-profile/
+*.log
+*.tsbuildinfo
+
