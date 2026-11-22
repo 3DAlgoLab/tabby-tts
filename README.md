@@ -9,7 +9,32 @@ by selecting text, by the toolbar button, or by hotkey.
 Built and verified against Tabby 1.0.238 on Windows x64. Other platforms fall back to
 Windows SAPI (Windows only) / report "no engine" elsewhere.
 
-## Install (from this repo)
+## Install
+
+The plugin is published on npm as [`tabby-tts`](https://www.npmjs.com/package/tabby-tts).
+Whichever route you take, the code has to end up in
+`%APPDATA%\tabby\plugins\node_modules\tabby-tts`, and Tabby has to be restarted after the copy.
+
+### From Tabby's plugin manager
+
+**Settings > Plugins > Install**, search `tts`, press **Install**. Tabby strips the `tabby-`
+prefix when it renders the list, so the row reads **tts**.
+
+### From npm, without the plugin manager
+
+```
+npm install --prefix %APPDATA%\tabby\plugins --no-save tabby-tts
+```
+
+`--prefix` aims npm at the plugin directory, so the package lands in
+`plugins\node_modules\tabby-tts`; `--no-save` leaves that folder as bare as Tabby's own
+installer leaves it - just `node_modules`, no stray `package.json` or lockfile.
+
+Use this when the Install tab does not list the plugin yet: Tabby builds that list from npm's
+*search* endpoint (`/-/v1/search?text=keywords:tabby-plugin`), and its index trails the
+registry after a publish even though `npm install` already resolves the package.
+
+### From a clone
 
 ```
 npm install
@@ -17,11 +42,11 @@ npm run build
 npm run install-local     # copies dist + package.json into %APPDATA%\tabby\plugins\node_modules\tabby-tts
 ```
 
-Fully quit Tabby (tray icon > Quit, not just closing the window) and start it again. Then
-**Settings > Text to Speech** exists, and a **Text to Speech** row appears in the settings
-navigation list.
+Then fully quit Tabby (tray icon > Quit, not just closing the window) and start it again. If it
+loaded, **Settings > Text to Speech** exists, a **Text to Speech** row appears in the settings
+navigation list, and Settings > Plugins lists **tabby-tts**.
 
-`install-local` copies into `plugins\node_modules\tabby-tts`, *not* `plugins\tabby-tts`.
+Every route writes to `plugins\node_modules\tabby-tts`, never `plugins\tabby-tts`.
 Tabby's renderer resolves user plugins from `<userData>\plugins\node_modules` (see
 `initModuleLookup` / `findPlugins` in `resources\app.asar`) and treats a directory as a plugin
 only when its own `package.json`, or a `tabby-*`/`terminus-*` child's, carries the
@@ -184,6 +209,10 @@ text handed to the voice - the quickest way to see what a filter option actually
 
 ## Troubleshooting
 
+- **Not listed under Settings > Plugins > Install** - npm's search index lags the registry
+  after a publish, while `npm install` already works; install it from npm instead (see
+  *Install*) and check the tab again later. Once listed, note that the row is called **tts**,
+  not **tabby-tts**.
 - **No Text to Speech settings tab, nothing happens** - the plugin is not being loaded. It has
   to sit at `%APPDATA%\tabby\plugins\node_modules\tabby-tts` (see *Install*), Tabby must have
   been *fully* quit since the copy, and `dist/index.js` must exist (run `npm run build`).

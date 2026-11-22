@@ -112,4 +112,7 @@ authoritative API for this machine (npm `tabby-core` latest tag = `1.0.231-night
 - [ ] Non-Windows engines beyond macOS `say`: Linux (`spd-say`/`espeak-ng`)
 - [ ] Optional: read the last output block / whole screen (`xterm.buffer`) on hotkey
 - [ ] Optional: language auto-detect per selection (voice switching for ko/en mixes)
-- [ ] Publish: `npm publish` with `tabby-plugin` keyword so it shows up in Tabby's plugin manager
+- [x] Published to npm as `tabby-tts` (0.1.2, git tag `v0.1.2`) - `npm install tabby-tts`
+      resolves and ships the verified bundle; Tabby's Install tab shows it as soon as npm's
+      search index picks up the `tabby-plugin` keyword
+- [ ] Optional: list it on Tabby's own docs/wiki plugin list once the npm listing is live
