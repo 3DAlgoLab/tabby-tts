@@ -192,24 +192,58 @@ export class TtsService {
             this.log.debug(`skip ${why}: same text already spoken`)
             return
         }
+        this.logUtterance(prepared, why)
+        this.lastSpoken = prepared.text
+        await this.run(prepared, why)
+    }
+
+    /** One line per utterance, plus the exact text the engine gets when verbose. */
+    private logUtterance (prepared: Prepared, why: string): void {
         this.log.debug(`speak ${why}: ${prepared.text.length} chars${prepared.truncated ? ` of ${prepared.rawLength}` : ''}`)
         if (this.effective.verbose) {
             // Quotes make the pauses and stripping visible; capped so no screenful of a
             // user's buffer lands in the log at debug level.
             this.log.debug(`  text: ${JSON.stringify(prepared.text.slice(0, 120))}`)
         }
-        this.lastSpoken = prepared.text
-        await this.run(prepared, why)
     }
 
+    /**
+     * Read the selection; when nothing is selected, replay the previous utterance.
+     * That fallback is what a second press of the button means, and under tmux or vim
+     * - where a terminal selection cannot exist at all - it is also the only way to
+     * hear the last line again.
+     */
     async speakSelection (): Promise<void> {
         const sel = readSelection(focusedTab(this.app))
-        if (!sel) {
-            this.log.debug('speak selection: nothing selected')
-            this.notifications.notice('Nothing selected to read')
+        if (sel) {
+            await this.speakText(sel, 'selection')
             return
         }
-        await this.speakText(sel, 'selection')
+        this.log.debug('speak selection: nothing selected, repeating the last utterance')
+        await this.repeatLast()
+    }
+
+    /** True once something has been spoken, i.e. there is something to replay. */
+    get canRepeat (): boolean {
+        return this.lastSpoken.length > 0
+    }
+
+    /** Replay the last utterance - even though it is by definition the same text. */
+    async repeatLast (): Promise<void> {
+        if (!this.settings.enabled) {
+            return
+        }
+        if (!this.lastSpoken) {
+            this.log.debug('skip repeat: nothing spoken yet')
+            this.notifications.notice('Nothing has been spoken yet')
+            return
+        }
+        // The stored text was prepared already, so it must not go through
+        // prepareForSpeech a second time - that would append another pause marker - and
+        // the identical-text guard in speakText is bypassed on purpose here.
+        const prepared: Prepared = { text: this.lastSpoken, rawLength: this.lastSpoken.length, truncated: false }
+        this.logUtterance(prepared, 'repeat')
+        await this.run(prepared, 'repeat')
     }
 
     /** Called by the terminal decorator on every selection change. */

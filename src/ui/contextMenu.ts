@@ -32,6 +32,13 @@ export class TtsContextMenu extends TabContextMenuItemProvider {
                 click: () => { void this.tts.speakSelection() },
             },
             {
+                // Replay of the last utterance. Not gated on a selection: under tmux
+                // there is never one, and this is how you hear the previous line again.
+                label: 'Repeat last speech',
+                enabled: this.tts.canRepeat,
+                click: () => { void this.tts.repeatLast() },
+            },
+            {
                 // Always available: under tmux/vim mouse mode this is the only way to
                 // read what was just copied if auto-speak on copy is off.
                 label: 'Read clipboard aloud',

@@ -1,6 +1,15 @@
 /**
  * Toolbar button + its submenu. The toolbar renders providers once per change,
  * so the labels here stay state-free; live state lives in the settings tab.
+ *
+ * Two things about reachability, both read out of Tabby 1.0.238:
+ *
+ * - `title` doubles as the command-palette / start-page label
+ *   (`Command.fromToolbarButton` in `commands.service`), so keep it short.
+ * - The terminal toolbar exists only where a tab sets `enableToolbar`, and in 1.0.238
+ *   that is SSH, Telnet and Serial tabs - a local shell tab has no toolbar at all. So
+ *   anything that matters must also live in the tab context menu, whose items the same
+ *   service flattens into palette commands.
  */
 import { Injectable } from '@angular/core'
 import { ToolbarButton, ToolbarButtonProvider } from 'tabby-core'
@@ -24,6 +33,7 @@ export class TtsToolbarProvider extends ToolbarButtonProvider {
             click: () => { void this.tts.speakSelection() },
             submenu: async () => [
                 { title: 'Stop speaking', click: () => this.tts.stop() },
+                { title: 'Repeat last speech', click: () => { void this.tts.repeatLast() } },
                 { title: 'Read clipboard aloud', click: () => { void this.tts.speakClipboard() } },
                 { title: 'Toggle auto-speak on select', click: () => this.tts.toggleAutoSpeak() },
                 { title: 'Toggle auto-speak on remote copy', click: () => this.tts.toggleAutoCopy() },

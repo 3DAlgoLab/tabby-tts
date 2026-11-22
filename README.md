@@ -48,6 +48,7 @@ SAPI (`Engine: Windows SAPI`).
 | Action | How |
 | --- | --- |
 | Speak the current selection | toolbar speaker button, or `Ctrl-Alt-S` |
+| Repeat the last speech | the same button, or `Ctrl-Alt-S`, **with nothing selected**; also right-click / command palette *Repeat last speech* |
 | Speak on selection (automatic) | on by default; toggle in settings, from the toolbar submenu, or `Ctrl-Alt-R` |
 | Speak what tmux/vim copies | on by default (`autoSpeakOnCopy`); settings, toolbar submenu, or right-click |
 | Read the clipboard aloud | toolbar submenu or right-click *Read clipboard aloud*, or `Ctrl-Alt-C` |
@@ -57,12 +58,19 @@ SAPI (`Engine: Windows SAPI`).
 Hotkeys are ordinary Tabby hotkeys (`tts:speak-selection`, `tts:speak-clipboard`, `tts:stop`,
 `tts:toggle-auto-speak`) and can be rebound under Settings > Hotkeys.
 
+The toolbar speaker button lives in the *terminal* toolbar, which Tabby only enables on SSH,
+Telnet and Serial tabs - in a local shell tab there is no toolbar, so use the right-click menu,
+the command palette (every action is a command there) or a hotkey. Repeating works the same way
+everywhere: the action reads the selection when there is one and replays the previous utterance
+when there is not, so a second press is "say that again".
+
 ### Inside tmux, vim, or anything else that grabs the mouse
 
 With `set -g mouse on` (tmux) or `set mouse=a` (vim) the drag is *reported to the application*
 instead of selecting text in xterm. There is then no terminal selection at all, so nothing
-can be spoken on select and *Read selection aloud* reports "nothing selected" - even though
-the text did reach your clipboard. Three ways to still get speech:
+can be spoken on select and *Read the current selection aloud* has nothing of its own to read -
+it repeats the last utterance instead, which is the only way to hear the previous line again
+under tmux - even though the text did reach your clipboard. Three ways to still get speech:
 
 1. **Copy it.** tmux copy-mode and vim yank send the copied text out as OSC 52, which Tabby
    decodes and tabby-tts speaks (`autoSpeakOnCopy`, on by default). This matches what you
