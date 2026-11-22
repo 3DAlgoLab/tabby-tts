@@ -1,6 +1,6 @@
 {
   "name": "tabby-tts",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Read terminal selections aloud in Tabby - local offline TTS (Windows SAPI / macOS say) with clipboard copy",
   "keywords": [
     "tabby-plugin",
