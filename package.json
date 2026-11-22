@@ -1,7 +1,15 @@
 {
   "name": "tabby-tts",
   "version": "0.1.2",
-  "description": "Read terminal selections aloud in Tabby - local offline TTS (Windows SAPI / macOS say) with clipboard copy",
+  "description": "Read terminal output aloud in Tabby, offline - Piper neural voices or Windows SAPI, with tmux/vim copy support",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/3DAlgoLab/tabby-tts.git"
+  },
+  "homepage": "https://github.com/3DAlgoLab/tabby-tts#readme",
+  "bugs": {
+    "url": "https://github.com/3DAlgoLab/tabby-tts/issues"
+  },
   "keywords": [
     "tabby-plugin",
     "tts",
@@ -41,12 +49,5 @@
     "typescript": "4.9.5",
     "webpack": "^5.94.0",
     "webpack-cli": "^5.1.4"
-  },
-  "peerDependencies": {
-    "@angular/core": "*",
-    "rxjs": "*",
-    "tabby-core": "*",
-    "tabby-settings": "*",
-    "tabby-terminal": "*"
   }
 }
