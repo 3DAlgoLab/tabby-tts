@@ -17,22 +17,51 @@ Whichever route you take, the code has to end up in
 
 ### From Tabby's plugin manager
 
-**Settings > Plugins > Install**, search `tts`, press **Install**. Tabby strips the `tabby-`
+**Settings > Plugins > Install**, type `tts`, press **Install**. Tabby strips the `tabby-`
 prefix when it renders the list, so the row reads **tts**.
+
+That search box does not filter. Tabby asks npm for every package tagged `tabby-plugin`
+(`/-/v1/search?text=keywords:tabby-plugin <query>&size=250`) and sorts the answer by npm's
+relevance score, and npm scores a freshly published package 0 - so typing `tts` returns the
+whole set (213 rows today) with **tts** on the very last one. Scroll to the bottom of the list
+before deciding the plugin is missing.
 
 ### From npm, without the plugin manager
 
+In **cmd.exe**:
+
 ```
 npm install --prefix %APPDATA%\tabby\plugins --no-save tabby-tts
+```
+
+In **PowerShell** and **Git Bash**, `%VAR%` is not that shell's own syntax - the line above only
+works in PowerShell because `npm` resolves to `npm.cmd`, which hands the argument through cmd one
+more time - so use the form your shell expands itself:
+
+```
+npm install --prefix $env:APPDATA\tabby\plugins --no-save tabby-tts   # PowerShell
+npm install --prefix "$APPDATA/tabby/plugins" --no-save tabby-tts     # Git Bash
 ```
 
 `--prefix` aims npm at the plugin directory, so the package lands in
 `plugins\node_modules\tabby-tts`; `--no-save` leaves that folder as bare as Tabby's own
 installer leaves it - just `node_modules`, no stray `package.json` or lockfile.
 
-Use this when the Install tab does not list the plugin yet: Tabby builds that list from npm's
-*search* endpoint (`/-/v1/search?text=keywords:tabby-plugin`), and its index trails the
-registry after a publish even though `npm install` already resolves the package.
+The danger is a prefix your shell did not expand. MSYS bash passes `%APPDATA%\tabby\plugins`
+through as a literal and swallows the backslashes too, so npm installs into
+`./%APPDATA%tabbyplugins` inside whatever directory you happen to be standing in, prints
+`added 1 package`, and exits 0: a flawless-looking install that Tabby can never load. `added 1
+package` therefore proves nothing - confirm the folder exists:
+
+| Shell | Check |
+| --- | --- |
+| cmd | `dir %APPDATA%\tabby\plugins\node_modules\tabby-tts` |
+| PowerShell | `dir $env:APPDATA\tabby\plugins\node_modules\tabby-tts` |
+| Git Bash | `ls "$APPDATA/tabby/plugins/node_modules/tabby-tts"` |
+
+Use the npm route when the Install tab genuinely does not list the plugin yet: npm's *search*
+index trails the registry for a while after a publish, while `npm install` resolves the new
+version immediately.
 
 ### From a clone
 
@@ -209,10 +238,18 @@ text handed to the voice - the quickest way to see what a filter option actually
 
 ## Troubleshooting
 
-- **Not listed under Settings > Plugins > Install** - npm's search index lags the registry
-  after a publish, while `npm install` already works; install it from npm instead (see
-  *Install*) and check the tab again later. Once listed, note that the row is called **tts**,
-  not **tabby-tts**.
+- **Not listed under Settings > Plugins > Install** - the list is npm's whole `tabby-plugin`
+  result set ordered by npm's score, so a new package sits on the last row: type `tts` and
+  *scroll to the bottom* first (see *From Tabby's plugin manager*). npm's search index also
+  trails the registry after a publish while `npm install` already resolves the package; then
+  install it from npm instead and check the tab again later. Either way the row is called
+  **tts**, not **tabby-tts**.
+- **npm printed `added 1 package` and Tabby still lists nothing** - it installed somewhere else.
+  `%APPDATA%` is only expanded by cmd (and by the `npm.cmd` shim under PowerShell); from Git Bash
+  the README line writes to a literal `./%APPDATA%tabbyplugins` next to your current directory and
+  still reports success (see *From npm*). Check the folder really exists, delete the stray copy,
+  redo the install with the path form your shell understands, then quit Tabby completely - a
+  running window keeps the plugin list it read at startup.
 - **No Text to Speech settings tab, nothing happens** - the plugin is not being loaded. It has
   to sit at `%APPDATA%\tabby\plugins\node_modules\tabby-tts` (see *Install*), Tabby must have
   been *fully* quit since the copy, and `dist/index.js` must exist (run `npm run build`).
