@@ -183,10 +183,20 @@ function catalog () {
         return []
     }
     const src = fs.readFileSync(file, 'utf8')
-    const start = src.indexOf('[')
+    // The array literal is the operand of the export's assignment. The first '['
+    // in the file is the one in the `PiperVoice[]` type annotation, which is not
+    // it - slice from the '=' so the JSON boundaries line up.
+    const assign = src.search(/=\s*\[/)
+    const start = assign < 0 ? -1 : src.indexOf('[', assign)
     const end = src.lastIndexOf(']')
+    if (start < 0 || end < start) {
+        console.warn('could not find the voice array in src/voiceCatalog.ts; pass full ids and expect no md5 check')
+        return []
+    }
     try {
-        return JSON.parse(src.slice(start + 1, end))
+        // Keep both brackets: the inner text alone is a bare comma-separated
+        // list of objects, which JSON.parse rejects.
+        return JSON.parse(src.slice(start, end + 1))
     } catch {
         console.warn('could not parse src/voiceCatalog.ts; pass full ids and expect no md5 check')
         return []
