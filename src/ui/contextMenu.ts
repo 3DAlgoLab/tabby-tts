@@ -23,13 +23,22 @@ export class TtsContextMenu extends TabContextMenuItemProvider {
             return []
         }
         const hasSelection = selectionOf(tab).length > 0
+        // State read once, when the menu is built: Tabby never updates an open menu.
+        // `speaking` takes precedence over the selection, so stopping a long utterance
+        // stays offered even if opening the menu cost the selection.
+        const speaking = this.tts.isSpeaking
         const settings = this.tts.settings
 
         return [
             {
-                label: 'Read selection aloud',
-                enabled: hasSelection,
-                click: () => { void this.tts.speakSelection() },
+                // One item for both directions, the same toggle as the toolbar button -
+                // and the same is true of the command-palette entries Tabby flattens from
+                // these two providers. It replaces the old separate *Stop speaking* item:
+                // while speech was running that item and this one said the same thing,
+                // and while it was idle the Stop item was just dead weight.
+                label: speaking ? 'Stop speaking' : 'Read selection aloud',
+                enabled: speaking || hasSelection,
+                click: () => { void this.tts.speakOrStop() },
             },
             {
                 // Replay of the last utterance. Not gated on a selection: under tmux
@@ -43,11 +52,6 @@ export class TtsContextMenu extends TabContextMenuItemProvider {
                 // read what was just copied if auto-speak on copy is off.
                 label: 'Read clipboard aloud',
                 click: () => { void this.tts.speakClipboard() },
-            },
-            {
-                label: 'Stop speaking',
-                enabled: this.tts.state$.value !== 'idle',
-                click: () => this.tts.stop(),
             },
             { type: 'separator' },
             {

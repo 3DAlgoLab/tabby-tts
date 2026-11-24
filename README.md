@@ -102,11 +102,11 @@ SAPI (`Engine: Windows SAPI`).
 | Action | How |
 | --- | --- |
 | Speak the current selection | toolbar speaker button, or `Ctrl-Alt-S` |
-| Repeat the last speech | the same button, or `Ctrl-Alt-S`, **with nothing selected**; also right-click / command palette *Repeat last speech* |
+| Stop a long utterance | **click that same button again** (or press the right-click item again - it reads *Stop speaking* while it talks); also toolbar submenu *Stop speaking*, settings *Stop*, or `Ctrl-Alt-D` |
+| Repeat the last speech | the same button, or `Ctrl-Alt-S`, **with nothing selected and nothing speaking**; also right-click / command palette *Repeat last speech* |
 | Speak on selection (automatic) | on by default; toggle in settings, from the toolbar submenu, or `Ctrl-Alt-R` |
 | Speak what tmux/vim copies | on by default (`autoSpeakOnCopy`); settings, toolbar submenu, or right-click |
 | Read the clipboard aloud | toolbar submenu or right-click *Read clipboard aloud*, or `Ctrl-Alt-C` |
-| Stop speaking | toolbar submenu *Stop speaking*, settings *Stop*, or `Ctrl-Alt-D` |
 | Test the current voice | settings tab, *Speak example* |
 
 Hotkeys are ordinary Tabby hotkeys (`tts:speak-selection`, `tts:speak-clipboard`, `tts:stop`,
@@ -114,9 +114,19 @@ Hotkeys are ordinary Tabby hotkeys (`tts:speak-selection`, `tts:speak-clipboard`
 
 The toolbar speaker button lives in the *terminal* toolbar, which Tabby only enables on SSH,
 Telnet and Serial tabs - in a local shell tab there is no toolbar, so use the right-click menu,
-the command palette (every action is a command there) or a hotkey. Repeating works the same way
-everywhere: the action reads the selection when there is one and replays the previous utterance
-when there is not, so a second press is "say that again".
+the command palette (every action is a command there) or a hotkey.
+
+One control does both directions of the same action, which is what makes a 4000-character
+selection escapable: while speech is running, the button and the first right-click item *are* the
+Stop button, and clicking cuts the audio in the same frame. The right-click item says
+*Stop speaking* whenever it means stop; the toolbar tooltip says both, because Tabby renders
+toolbar providers once per change and cannot repaint an icon per state.
+
+Repeating works the same way everywhere: once the speech has ended, the action reads the
+selection when there is one and replays the previous utterance when there is not, so a press with
+nothing selected is "say that again". `Ctrl-Alt-S` is the one entry that does not toggle - Tabby
+re-fires a hotkey for every auto-repeat keystroke while the combination is held, so a held key
+would flip stop and start many times a second; stop with `Ctrl-Alt-D`.
 
 ### Inside tmux, vim, or anything else that grabs the mouse
 
@@ -204,8 +214,11 @@ Two toggles shape what reaches the voice:
   appears late (SSH connects after the tab is created) and is replaced on reconnect, so the
   handle is polled and the subscription follows the current session.
 - `src/services/tts.service.ts` owns the engine lifecycle, the selection policy
-  (enabled / auto-speak / length limits / dedupe of the same text), and the engine
-  restart when a setting that needs it changes.
+  (enabled / auto-speak / length limits / dedupe of the same text), the speak-or-stop
+  toggle, and the engine restart when a setting that needs it changes. Every utterance
+  carries a run number, so a run that was already stopped - whose promise can settle
+  seconds later, while Piper finishes a WAV nobody waits for - cannot report `idle` or
+  `error` over whatever the user started next.
 - `src/engines/piper.ts` keeps one long-lived `piper.exe` per window, feeds it
   `--json_input` lines and reads back the WAV path it wrote; playback goes through Web
   Audio (`wavPlayer.ts`) so *Stop* cuts audio in the same frame while synthesis keeps

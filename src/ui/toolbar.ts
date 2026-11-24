@@ -28,9 +28,11 @@ export class TtsToolbarProvider extends ToolbarButtonProvider {
     provide (): ToolbarButton[] {
         return [{
             icon: ICON_SPEAK,
-            title: 'Read the current selection aloud',
+            // The provider cannot re-render when the state changes, so the tooltip states
+            // both directions instead of trying to show the current one.
+            title: 'Read selection aloud, or stop',
             weight: 100,
-            click: () => { void this.tts.speakSelection() },
+            click: () => { void this.tts.speakOrStop() },
             submenu: async () => [
                 { title: 'Stop speaking', click: () => this.tts.stop() },
                 { title: 'Repeat last speech', click: () => { void this.tts.repeatLast() } },

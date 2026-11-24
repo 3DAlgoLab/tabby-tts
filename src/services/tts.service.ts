@@ -75,6 +75,13 @@ export class TtsService {
     private autoTimer: NodeJS.Timeout | null = null
     private warnedMissingAssets = false
     private speaking = false
+    /** Counter feeding `activeRun`; every run takes the next number. */
+    private runSeq = 0
+    /**
+     * Number of the newest utterance. `stop()` zeroes it, which retires the run that
+     * is still winding down - see `run()`.
+     */
+    private activeRun = 0
 
     readonly state$ = new BehaviorSubject<TtsState>('idle')
     readonly progress$ = new BehaviorSubject<AssetProgress | null>(null)
@@ -178,7 +185,7 @@ export class TtsService {
 
     // ------------------------------------------------------------------ speech
 
-    /** Speak arbitrary text (hotkey, toolbar, settings test, auto-speak). */
+    /** Speak arbitrary text (settings test, clipboard, auto-speak, repeat). */
     async speakText (raw: string, why: string): Promise<void> {
         if (!this.settings.enabled) {
             return
@@ -209,9 +216,10 @@ export class TtsService {
 
     /**
      * Read the selection; when nothing is selected, replay the previous utterance.
-     * That fallback is what a second press of the button means, and under tmux or vim
+     * That fallback is what a press with nothing selected means, and under tmux or vim
      * - where a terminal selection cannot exist at all - it is also the only way to
-     * hear the last line again.
+     * hear the last line again. While something is still being read, the button does
+     * not reach this method at all: see `speakOrStop`.
      */
     async speakSelection (): Promise<void> {
         const sel = readSelection(focusedTab(this.app))
@@ -221,6 +229,35 @@ export class TtsService {
         }
         this.log.debug('speak selection: nothing selected, repeating the last utterance')
         await this.repeatLast()
+    }
+
+    /**
+     * True while audio is being prepared or played. `error` is deliberately excluded:
+     * a failed utterance has to stay re-triggerable by the same control.
+     */
+    get isSpeaking (): boolean {
+        const state = this.state$.value
+        return state === 'starting' || state === 'speaking'
+    }
+
+    /**
+     * What the speaker button and the right-click item do (and therefore also the
+     * command-palette entries Tabby flattens from them): read the selection, or cut the
+     * utterance that is already running. The `tts:speak-selection` hotkey stays a plain
+     * speak - see `bindHotkeys`.
+     *
+     * A long selection needs an abort that is closer than the submenu, and the second
+     * click on the same control is the only gesture at hand. Without it that click is
+     * silently dropped - the selection has not changed, so the identical-text guard in
+     * `speakText` treats it as a duplicate - and the button reads as dead.
+     */
+    async speakOrStop (): Promise<void> {
+        if (this.isSpeaking) {
+            this.log.debug('stop: speech still running, cutting it instead of queueing')
+            this.stop()
+            return
+        }
+        await this.speakSelection()
     }
 
     /** True once something has been spoken, i.e. there is something to replay. */
@@ -309,11 +346,19 @@ export class TtsService {
         }, AUTO_SPEAK_DEBOUNCE_MS)
     }
 
+    /**
+     * Silence now, and retire the current utterance. Its promise can settle seconds
+     * later - Piper keeps synthesising a WAV nobody is waiting for - so without the
+     * epoch it would report `idle` (or `error`) over whatever the user started in the
+     * meantime, and leave `speaking` set so the next click queued instead of stopping.
+     */
     stop (): void {
         if (this.autoTimer) {
             clearTimeout(this.autoTimer)
             this.autoTimer = null
         }
+        this.activeRun = 0
+        this.speaking = false
         this.engine?.cancel()
         this.setState('idle')
     }
@@ -335,18 +380,35 @@ export class TtsService {
     }
 
     private async run (prepared: Prepared, why: string): Promise<void> {
+        // Only the newest run may move the state: a Stop zeroes `activeRun`, and a run
+        // that was already superseded when it finally settles must not overwrite what
+        // is running now. `speaking` gates the identical-text guard, so a stale
+        // completion would also re-open it under live audio.
+        const run = ++this.runSeq
+        this.activeRun = run
         this.speaking = true
         this.clearUnload()
         this.setState('starting')
         try {
             const engine = await this.getEngine()
+            if (this.activeRun !== run) {
+                this.log.debug(`stopped while starting the engine (${why})`)
+                return
+            }
             this.setState('speaking')
             await engine.speak(prepared.text)
-            this.setState('idle')
-            if (prepared.truncated) {
-                this.log.debug(`spoke ${this.effective.maxChars} chars of ${prepared.rawLength} (${why}), rest truncated`)
+            if (this.activeRun === run) {
+                this.setState('idle')
+                if (prepared.truncated) {
+                    this.log.debug(`spoke ${this.effective.maxChars} chars of ${prepared.rawLength} (${why}), rest truncated`)
+                }
             }
         } catch (e) {
+            if (this.activeRun !== run) {
+                // Almost always the engine shutting down under a Stop the user pressed.
+                this.log.debug(`ignored failure of a stopped utterance (${why}): ${(e as Error)?.message ?? e}`)
+                return
+            }
             this.setState('error')
             this.reportError(e)
             setTimeout(() => {
@@ -355,7 +417,10 @@ export class TtsService {
                 }
             }, 4000)
         } finally {
-            this.speaking = false
+            if (this.activeRun === run) {
+                this.activeRun = 0
+                this.speaking = false
+            }
             this.armUnload()
         }
     }
@@ -502,6 +567,12 @@ export class TtsService {
         this.hotkeys.hotkey$.subscribe(hotkey => {
             switch (hotkey) {
                 case HOTKEY_SPEAK:
+                    // Deliberately not the button's `speakOrStop` toggle. Tabby re-emits
+                    // hotkey$ for every auto-repeat keydown while a combo is held
+                    // (HotkeysService.pushKeyEvent only drops a repeated *event*, matched
+                    // on timeStamp, and keydown re-arms recognitionPhase), so a held key
+                    // would flip stop -> start -> stop and stutter the audio. `tts:stop`
+                    // is the counterpart here.
                     void this.speakSelection()
                     break
                 case HOTKEY_SPEAK_CLIPBOARD:

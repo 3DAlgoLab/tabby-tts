@@ -109,6 +109,12 @@ authoritative API for this machine (npm `tabby-core` latest tag = `1.0.231-night
       runs like `...` / `?!`, so a filtered question is still read as a question
 - [x] *Read the current selection aloud* falls back to repeating the last utterance when nothing
       is selected, plus a *Repeat last speech* entry in the context menu / command palette
+- [x] The speak control doubles as Stop: clicking the toolbar button, or the right-click item
+      (which then reads *Stop speaking*), cuts the utterance - `speakOrStop` / `isSpeaking`. Each
+      utterance carries a run number so a stopped run, whose promise can settle seconds later while
+      Piper finishes an unwanted WAV, cannot overwrite the state of the next one. `Ctrl-Alt-S` is
+      deliberately not a toggle: Tabby re-fires `hotkey$` on every auto-repeat keydown while a combo
+      is held, so a held key would oscillate between stop and start
 - [ ] Non-Windows engines beyond macOS `say`: Linux (`spd-say`/`espeak-ng`)
 - [ ] Optional: read the last output block / whole screen (`xterm.buffer`) on hotkey
 - [ ] Optional: language auto-detect per selection (voice switching for ko/en mixes)
